@@ -1,106 +1,148 @@
-//const readline = require('readline-sync');
+const readline = require('readline-sync');
 
+console.log('Please enter your postcode :')
+let userPostcode = readline.prompt();
 
-//https://transportapi.com/v3/uk/bus/stop/490003025W/live.json?app_id=429d2986&app_key=31d8fbe68ead7b9abe6ea4720cbc9441&group=route&nextbuses=yes
-
-
-
-//console.log('Please enter your bus sto code :')
-//let userCode = readline.prompt();
+console.log(userPostcode)
 var XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest;
 
-// let examplePostcode = 'NW6 3AA';
-// const postcodeGeoLocRequest= new XMLHttpRequest();
-// const postcodeGeoLocURL = 'http://api.postcodes.io/postcodes/NW6%203AA'
-// postcodeGeoLocRequest.responseType ='json';
-// postcodeGeoLocRequest.open('GET', postcodeGeoLocURL);
-// postcodeGeoLocRequest.onreadystatechange = ()=>{
-//     console.log(postcodeGeoLocRequest.readyState);
-//     if(postcodeGeoLocRequest.readyState === 4){
-//         let postcodeGeoLoc =JSON.parse(postcodeGeoLocRequest.responseText);
 
-//         console.log(postcodeGeoLoc);
-
-//         let postcodeLong = postcodeGeoLoc.result.longitude;
-//         let postcodeLat = postcodeGeoLoc.result.latitude;
-       
-//         console.log(postcodeLong +' and '+ postcodeLat);
-//     }
-// }
-
-// postcodeGeoLocRequest.send();
-
-const nearStopRequest =new XMLHttpRequest();
-const nearStopsURL ='http://transportapi.com/v3/uk/places.json?app_id=429d2986&app_key=31d8fbe68ead7b9abe6ea4720cbc9441&lat=51.541873&lon=-0.190599&type=bus_stop'
-nearStopRequest.responseType='json';
-nearStopRequest.open('GET',nearStopsURL);
-nearStopRequest.onreadystatechange = () =>{
-    console.log(nearStopRequest.readyState);
-    if(nearStopRequest.readyState === 4){
+let BusTimesForOneStop =(busStopCode,busStopName) =>{
+    const busTimeRequest = new XMLHttpRequest();
+    const busTimeUrl = `https://transportapi.com/v3/uk/bus/stop/${busStopCode}/live.json?app_id=429d2986&app_key=31d8fbe68ead7b9abe6ea4720cbc9441&group=route&nextbuses=yes`
+    
+    busTimeRequest.responseType = 'json';
+    busTimeRequest.open('GET', busTimeUrl);
+    busTimeRequest.onreadystatechange = () => {
         
-        let nearStops = JSON.parse(nearStopRequest.responseText);
-        console.log(nearStops);
-
-        let firstStop='';
-        let secondStop ='';
-
-        if(nearStops.member[0].atcocode === undefined && nearStops.member[1].atcocode=== undefined ){
-            console.log( 'There is no bus stop in the 500  meters around you.')
+        if (busTimeRequest.readyState === 4) {
+            let busTimeResponse = JSON.parse(busTimeRequest.responseText);
+           
+            let presentBusLines = Object.getOwnPropertyNames(busTimeResponse.departures); //this is an array of string
+            console.log(presentBusLines);
+    
+            for (let i = 0; i < presentBusLines.length; i++) {
+                let lineDepartures = busTimeResponse.departures[presentBusLines[i]]
+    
+                let nextDepartures = []
+                for (let j = 0; j < lineDepartures.length; j++) {
+                    nextDepartures.push(lineDepartures[j].expected_departure_time)
+    
+                }
+    
+                if (nextDepartures.length > 0) {
+                    console.log(`The next departures times for line ${presentBusLines[i]} at ${busStopName} are ${nextDepartures}.`)
+                }
+    
+                else {
+                    console.log('There is no expected departure for this bus.')
+                }
+    
+            }
+    
         }
-        else if( nearStops.member[0].atcocode && nearStops.member[1].atcocode=== undefined){
-         firstStop = nearStops.member[0].atcocode
-        }
-        else if (nearStops.member[0].atcocode && nearStops.member[1].atcocode){
-            firstStop = nearStops.member[0].atcocode
-            secondStop = nearStops.member[1].atcocode
-        }
-        secondStop = nearStops.member[1].atcocode
+    }
+    
+    
+    busTimeRequest.send();
+    
+    }
 
-        console.log( firstStop +' and '+ secondStop)
+let twoClosestBusStop =( postcodeLat, postcodeLong) =>{
+    const nearStopRequest =new XMLHttpRequest();
+    const nearStopsURL =`http://transportapi.com/v3/uk/places.json?app_id=429d2986&app_key=31d8fbe68ead7b9abe6ea4720cbc9441&lat=${postcodeLat}&lon=${postcodeLong}&type=bus_stop`
+                        
+    console.log(nearStopsURL);
+    nearStopRequest.responseType='json';
+    nearStopRequest.open('GET',nearStopsURL);
+    nearStopRequest.onreadystatechange = () =>{
+        
+        if(nearStopRequest.readyState === 4){
+            
+            let nearStops = JSON.parse(nearStopRequest.responseText);
+            //console.log(nearStops);
+    
+            let firstStop =''
+            let secondStop =''
+
+            let firstStopName =''
+            let secondStopName =''
+
+
+
+            if(nearStops.member.length === 0){
+                console.log('There are not bus stops close by.')
+            }
+            else if (nearStops.member.length === 1){
+                firstStop= nearStops.member[0].atcocode
+                firstStopName = nearStops.member[0].name
+                BusTimesForOneStop(firstStop, firstStopName);
+            }
+            else if (nearStops.member.length >=2){
+                firstStop= nearStops.member[0].atcocode
+                firstStopName = nearStops.member[0].name
+                BusTimesForOneStop(firstStop, firstStopName);
+
+                secondStop =nearStops.member[1].atcocode;
+                secondStopName = nearStops.member[1].name;
+                BusTimesForOneStop(secondStop, secondStopName);
+            }
+    
+            
+    
+            console.log( firstStop +' and '+ secondStop)
+
+            
+        }
+    }
+    nearStopRequest.send();
+    }
+
+let postcodeGeoLoc =(userPostcode)=>{
+    const postcodeGeoLocRequest= new XMLHttpRequest();
+    const postcodeGeoLocURL = `http://api.postcodes.io/postcodes/${userPostcode}`
+    postcodeGeoLocRequest.responseType ='json';
+    postcodeGeoLocRequest.open('GET', postcodeGeoLocURL);
+    postcodeGeoLocRequest.onreadystatechange = ()=>{
+        
+        if(postcodeGeoLocRequest.readyState === 4){
+            let postcodeGeoLoc =JSON.parse(postcodeGeoLocRequest.responseText);
+    
+            console.log(postcodeGeoLoc);
+    
+            let postcodeLong = postcodeGeoLoc.result.longitude;
+            let postcodeLat = postcodeGeoLoc.result.latitude;
+           
+            console.log(postcodeLat +' and '+ postcodeLong);
+
+            twoClosestBusStop( postcodeLat, postcodeLong);
+        }
+    }
+    
+    postcodeGeoLocRequest.send();
+}
+
+
+
+const postcodeValidationRequest=new XMLHttpRequest();
+const postcodeValidationURL = `http://api.postcodes.io/postcodes/${userPostcode}/validate`
+postcodeValidationRequest.responseType ='json';
+postcodeValidationRequest.open('GET', postcodeValidationURL);
+postcodeValidationRequest.onreadystatechange =()=>{
+    console.log(postcodeValidationRequest.readyState);
+    if (postcodeValidationRequest.readyState===4){
+        let postcodeValidation = JSON.parse(postcodeValidationRequest.responseText);
+        console.log(postcodeValidation)
+
+        if (!postcodeValidation.result){
+            console.log('The postcode you entered doesn\'t exsist')
+        }
+        else{
+            postcodeGeoLoc(userPostcode)
+        }
     }
 }
-nearStopRequest.send();
+postcodeValidationRequest.send();
 
-
-// let atcoCode = '490003025W';
-// const busTimeRequest = new XMLHttpRequest();
-// const busTimeUrl = 'https://transportapi.com/v3/uk/bus/stop/490003025W/live.json?app_id=429d2986&app_key=31d8fbe68ead7b9abe6ea4720cbc9441&group=route&nextbuses=yes'
-
-// busTimeRequest.responseType = 'json';
-// busTimeRequest.open('GET', busTimeUrl);
-// busTimeRequest.onreadystatechange = () => {
-//     console.log(busTimeRequest.readyState)
-//     if (busTimeRequest.readyState === 4) {
-//         let busTimeResponse = JSON.parse(busTimeRequest.responseText);
-
-//         //console.log(busTimeResponse);
-//         console.log(busTimeResponse.departures['276']);
-//         let presentBusLines = Object.getOwnPropertyNames(busTimeResponse.departures); //this is an array of string
-//         console.log(presentBusLines);
-
-//         for (let i = 0; i < presentBusLines.length; i++) {
-//             let lineDepartures = busTimeResponse.departures[presentBusLines[i]]
-
-//             let nextDepartures = []
-//             for (let j = 0; j < lineDepartures.length; j++) {
-//                 nextDepartures.push(lineDepartures[j].expected_departure_time)
-
-//             }
-
-//             if (nextDepartures.length > 0) {
-//                 console.log(`the next departures times for line ${presentBusLines[i]} are ${nextDepartures}.`)
-//             }
-
-//             else {
-//                 console.log('There is no expected departure for this bus.')
-//             }
-
-//         }
-
-//     }
-// }
-
-
-// busTimeRequest.send();
 
 
