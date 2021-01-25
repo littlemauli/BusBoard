@@ -1,13 +1,18 @@
 const readline = require('readline-sync');
-var XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest;
+    var XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest;
 
 
-console.log('Please enter your postcode :')
-let userPostcode = readline.prompt();
+class BusTravel {
 
-console.log(userPostcode)
+UserPostcodeInputMethod(){
+    console.log('Please enter your postcode :')
+    let userPostcode = readline.prompt();
+    return userPostcode
+}
 
-let BusTimesForOneStop = (busStopCode, busStopName) => {
+
+
+BusTimesForOneStopMethod(busStopCode, busStopName){
     const busTimeRequest = new XMLHttpRequest();
     const busTimeUrl = `https://transportapi.com/v3/uk/bus/stop/${busStopCode}/live.json?app_id=429d2986&app_key=31d8fbe68ead7b9abe6ea4720cbc9441&group=route&nextbuses=yes`
 
@@ -46,13 +51,10 @@ let BusTimesForOneStop = (busStopCode, busStopName) => {
 
         }
     }
-
-
     busTimeRequest.send();
-
 }
 
-let twoClosestBusStop = (postcodeLat, postcodeLong) => {
+twoClosestBusStopMethod(postcodeLat, postcodeLong){
     const nearStopRequest = new XMLHttpRequest();
     const nearStopsURL = `http://transportapi.com/v3/uk/places.json?app_id=429d2986&app_key=31d8fbe68ead7b9abe6ea4720cbc9441&lat=${postcodeLat}&lon=${postcodeLong}&type=bus_stop`
 
@@ -87,7 +89,7 @@ let twoClosestBusStop = (postcodeLat, postcodeLong) => {
     nearStopRequest.send();
 }
 
-let postcodeGeoLoc = (userPostcode) => {
+postcodeGeoLocMethod(userPostcode){
     const postcodeGeoLocRequest = new XMLHttpRequest();
     const postcodeGeoLocURL = `http://api.postcodes.io/postcodes/${userPostcode}`
     postcodeGeoLocRequest.responseType = 'json';
@@ -112,7 +114,7 @@ let postcodeGeoLoc = (userPostcode) => {
 }
 
 
-
+userPostCodeValidationMethod(userPostcode){
 const postcodeValidationRequest = new XMLHttpRequest();
 const postcodeValidationURL = `http://api.postcodes.io/postcodes/${userPostcode}/validate`
 postcodeValidationRequest.responseType = 'json';
@@ -125,13 +127,20 @@ postcodeValidationRequest.onreadystatechange = () => {
 
         if (!postcodeValidation.result) {
             console.log('The postcode you entered doesn\'t exsist')
+            return this.UserPostcodeInputMethod()
         }
         else {
-            postcodeGeoLoc(userPostcode)
+             return userPostcode
         }
     }
 }
 postcodeValidationRequest.send();
+}   
+    
+    
+    
 
 
 
+
+}
