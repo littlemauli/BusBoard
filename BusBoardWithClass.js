@@ -4,6 +4,8 @@ const readline = require('readline-sync');
 
 class BusTravel {
 
+    
+
 UserPostcodeInputMethod(){
     console.log('Please enter your postcode :')
     let userPostcode = readline.prompt();
@@ -127,7 +129,7 @@ postcodeValidationRequest.onreadystatechange = () => {
 
         if (!postcodeValidation.result) {
             console.log('The postcode you entered doesn\'t exsist')
-            return this.UserPostcodeInputMethod()
+            
         }
         else {
              return userPostcode
@@ -136,6 +138,10 @@ postcodeValidationRequest.onreadystatechange = () => {
 }
 postcodeValidationRequest.send();
 }   
+
+postCodeValidationStateChangeHandler(){
+
+}
     
     
     
